@@ -3,7 +3,8 @@ signRequest  <- function(url, params, consumerKey, consumerSecret,
                          signMethod = "HMAC", nonce = genNonce(),
                          timestamp = Sys.time(),
                          escapeFun = curlPercentEncode,
-                         handshakeComplete=TRUE) {
+                         callback = character()
+                         handShakeComplete = TRUE) {
   ## Sign an request made up of the URL, the parameters as a named character
   ## vector the consumer key and secret and the token and token secret.
   httpMethod <- toupper(httpMethod)
@@ -25,6 +26,9 @@ signRequest  <- function(url, params, consumerKey, consumerSecret,
                                              )
   params["oauth_version"] <- '1.0'
 
+  if(length(callback))
+    params["oauth_callback"] <- callback
+
   ## we escape the values of the parameters in a special way that escapes
   ## the resulting % prefix in the escaped characters, e.g. %20 becomes
   ## %2520 as %25 is the escape for %
@@ -43,13 +47,12 @@ signRequest  <- function(url, params, consumerKey, consumerSecret,
 
   sig <- signString(odat, okey, signMethod)
 
-  ## Only perform the percent encode post-handshake when POSTing
-  if ((httpMethod == "POST") && (handshakeComplete)){
-    sig <- curlPercentEncode(sig)
+    ## Only perform the percent encode post-handshake when POSTing
+  if (httpMethod == "POST" && handshakeComplete) {
+    sig <- curlPercentEncode(sig) #XXX Should this be escapeFun(sig)
   }
   params["oauth_signature"] <- sig
-  ##
-  return(params[grepl("^oauth_", names(params))])
+  params[grepl("^oauth_", names(params))]
 }
 
 signString <- function(str, key, method) {
