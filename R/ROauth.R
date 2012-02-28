@@ -166,7 +166,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
   auth <- signRequest(url, params, consumerKey, consumerSecret,
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
                       httpMethod = "POST", signMethod = signMethod,
-                      handshakeComplete=handshakeComplete, callback = callback)
+                      handshakeComplete = handshakeComplete, callback = callback)
   opts <- list(...)
 
   opts = addAuthorizationHeader(opts, auth, oauthSecret)

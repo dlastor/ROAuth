@@ -17,6 +17,8 @@
       application}
     \item{\code{needsVerifier}:}{Whether or not this \code{OAuth} needs
       the verification step.  Defaults to \code{TRUE}}
+    \item{\code{postRequest}:}{a logical value that controls whether the
+      requests for the tokens and authorization keys use \code{POST} or \code{GET}.}        
     \item{\code{handshakeComplete}:}{Whether or not the handshaking was
       successfully completed}
     \item{\code{requestURL}:}{The URL provided for retrieving request tokens}

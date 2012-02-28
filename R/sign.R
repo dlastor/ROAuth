@@ -3,8 +3,8 @@ signRequest  <- function(url, params, consumerKey, consumerSecret,
                          signMethod = "HMAC", nonce = genNonce(),
                          timestamp = Sys.time(),
                          escapeFun = curlPercentEncode,
-                         callback = character()
-                         handShakeComplete = TRUE) {
+                         callback = character(),
+                         handshakeComplete = TRUE) {
   ## Sign an request made up of the URL, the parameters as a named character
   ## vector the consumer key and secret and the token and token secret.
   httpMethod <- toupper(httpMethod)
