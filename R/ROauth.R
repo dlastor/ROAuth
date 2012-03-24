@@ -137,8 +137,8 @@ parseResponse <- function(response) {
 oauthCommand <-
   function(url, consumerKey, consumerSecret,
            oauthKey, oauthSecret, params = character(), customHeader = NULL,
-           curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command
-          ) #.opts = list(...))
+           curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command,
+           .opts = list(...))
 {
   if(is.null(curl))
     curl <- getCurlHandle()
@@ -147,7 +147,9 @@ oauthCommand <-
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
                      httpMethod = .command, signMethod = signMethod, callback = callback)
 
-  .opts = list(...)
+#  .opts = list(...)
+  if(!missing(.opts) && length(args <- list(...)))
+     .opts = merge(.opts, args)
   .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
 
   curlPerform(curl = curl, url = url, .opts = .opts)
