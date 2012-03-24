@@ -31,8 +31,8 @@ setRefClass("OAuth",
                   with their web browser, entering a PIN into
                   this function.
                 '
-                .self$handshakeComplete <<- FALSE
-                .self$signMethod <<- signMethod
+                handshakeComplete <<- FALSE
+                signMethod <<- signMethod
 
                 op = if(post) oauthPOST else oauthGET
                 
@@ -40,7 +40,7 @@ setRefClass("OAuth",
                                   .self$consumerKey,
                                   .self$consumerSecret,
                                   NULL, NULL, signMethod=.self$signMethod, curl=curl,
-                                  handshakeComplete=.self$handshakeComplete, ...) # , callback = "oob")
+                                  handshakeComplete = .self$handshakeComplete, ...) # , callback = "oob")
                 vals <- parseResponse(resp)
                 if (!all(c('oauth_token', 'oauth_token_secret') %in%
                          names(vals))) {
@@ -48,8 +48,8 @@ setRefClass("OAuth",
                      "check your consumerKey and consumerSecret",
                      " and try again.")
                 }
-                .self$oauthKey <<- vals['oauth_token']
-                .self$oauthSecret <<- vals['oauth_token_secret']
+                oauthKey <<- vals['oauth_token']
+                oauthSecret <<- vals['oauth_token_secret']
                 if (.self$needsVerifier) {
                   verifyURL <- paste(.self$authURL, "?oauth_token=",
                                      oauthKey, sep='')
@@ -65,7 +65,7 @@ setRefClass("OAuth",
                 resp <- op(.self$accessURL, .self$consumerKey, .self$consumerSecret,
                             .self$oauthKey, .self$oauthSecret, signMethod=.self$signMethod,
                               curl=getCurlHandle(), params = params,
-                              handshakeComplete=.self$handshakeComplete, ..., callback = "oob")
+                              handshakeComplete = .self$handshakeComplete, ..., callback = "oob")
                 vals <- parseResponse(resp)
                 if (!all(c('oauth_token', 'oauth_token_secret') %in%
                          names(vals))) {
@@ -74,9 +74,9 @@ setRefClass("OAuth",
                        " this handshake & browser authorization to get",
                        " a new PIN.")
                 }
-                .self$oauthKey <<- vals['oauth_token']
-                .self$oauthSecret <<- vals['oauth_token_secret']
-                .self$handshakeComplete <<- TRUE
+                oauthKey <<- vals['oauth_token']
+                oauthSecret <<- vals['oauth_token_secret']
+                handshakeComplete <<- TRUE
               },
               
               isVerified = function() {
@@ -89,8 +89,9 @@ setRefClass("OAuth",
                   TRUE
               },
               
-              OAuthRequest = function(URL, params=character(), method="GET",
-                                      customHeader=NULL, curl=getCurlHandle(), ...) {
+              OAuthRequest = function(URL, params = character(), method = "GET",
+                                      customHeader = NULL, curl = getCurlHandle(), ...) #, .opts = list())
+               {
                 ' If the OAuth handshake has been completed, will
                 submit a URL request with an OAuth signature, returning
                 any response from the server
@@ -102,12 +103,13 @@ setRefClass("OAuth",
                                    POST = oauthPOST,
                                    GET = oauthGET,
                                    PUT = oauthPUT,
-                                   stop("method must be POST or GET"))
+                                   stop("method must be POST, PUT or GET"))
 
-                httpFunc(URLencode(URL), params=params, consumerKey=.self$consumerKey,
-                         consumerSecret=.self$consumerSecret,
-                         oauthKey=.self$oauthKey, oauthSecret=.self$oauthSecret,
-                         customHeader.self$customHeader, curl=getCurlHandle(), signMethod=.self$signMethod, ...)
+                httpFunc(URLencode(URL), params = params, consumerKey = .self$consumerKey,
+                         consumerSecret = .self$consumerSecret,
+                         oauthKey = .self$oauthKey, oauthSecret = .self$oauthSecret,
+                         customHeader = .self$customHeader, curl = curl, #XXX use customHeader in formals.
+                         signMethod = .self$signMethod, ...)#, .opts = .opts)
               }
               )
             )
@@ -132,21 +134,23 @@ parseResponse <- function(response) {
   out
 }
 
-oauthCommand <- function(url, consumerKey, consumerSecret,
-                      oauthKey, oauthSecret, params=character(), customHeader = NULL,
-                      curl = getCurlHandle(), signMethod='HMAC', ..., callback = character(), .command)
+oauthCommand <-
+  function(url, consumerKey, consumerSecret,
+           oauthKey, oauthSecret, params = character(), customHeader = NULL,
+           curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command
+          ) #.opts = list(...))
 {
   if(is.null(curl))
     curl <- getCurlHandle()
   
   auth <- signRequest(url, params, consumerKey, consumerSecret,
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
-                      httpMethod = .command, signMethod = signMethod, callback = callback)
-  opts <- list(...)
+                     httpMethod = .command, signMethod = signMethod, callback = callback)
 
-  opts = addAuthorizationHeader(opts, auth, oauthSecret)
+  .opts = list(...)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
 
-  curlPerform(curl = curl, url = url, .opts = opts)
+  curlPerform(curl = curl, url = url, .opts = .opts)
 }
 
 oauthPUT <- function(...)
@@ -159,7 +163,7 @@ oauthDELETE <- function(...)
 oauthPOST <- function(url, consumerKey, consumerSecret,
                       oauthKey, oauthSecret, params = character(), customHeader = NULL,
                       curl = getCurlHandle(), signMethod = 'HMAC', handshakeComplete = TRUE,
-                      ..., callback = character()) {
+                      ..., callback = character(), .opts = list(...)) {
   if(is.null(curl))
     curl <- getCurlHandle()
   
@@ -167,9 +171,8 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
                       httpMethod = "POST", signMethod = signMethod,
                       handshakeComplete = handshakeComplete, callback = callback)
-  opts <- list(...)
 
-  opts = addAuthorizationHeader(opts, auth, oauthSecret)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
   
   ## post ,specify the method
   ## We should be able to use postForm() but we have to work out the issues
@@ -179,11 +182,11 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
     fields <- paste(names(auth), sapply(auth, curlPercentEncode),
                     sep = "=", collapse = "&")
     curlPerform(curl = curl, URL = url, postfields = fields,
-                writefunction = reader$update, ...)
+                writefunction = reader$update, .opts = .opts)
     reader$value()
   } else
-  postForm(url, .params = c(params, lapply(auth, I)), curl = curl,
-           .opts = opts, style = "POST")
+      postForm(url, .params = c(params, lapply(auth, I)), curl = curl,
+                .opts = .opts, style = "POST")
 }
 
 #XXX? use .opts for the curl options.
@@ -191,7 +194,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
 
 oauthGET <- function(url, consumerKey, consumerSecret,
                      oauthKey, oauthSecret, params=character(), customHeader = NULL,
-                     curl = getCurlHandle(), signMethod='HMAC',
+                     curl = getCurlHandle(), signMethod='HMAC', handshakeComplete = TRUE,
                       ..., .opts = list(...), callback = character()) {
   ##   opts = list(httpheader = c(Authentication = paste(names(auth),  auth, sep = "=", collapse = "\n   ")), ...)
   if(is.null(curl))
@@ -203,8 +206,6 @@ oauthGET <- function(url, consumerKey, consumerSecret,
 
    params <- c(params, as.list(auth))
 
-
-  .opts = list(...)
   .opts$httpget = TRUE
 
   .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
