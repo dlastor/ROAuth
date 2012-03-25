@@ -149,6 +149,7 @@ oauthCommand <-
 {
   if(is.null(curl))
     curl <- getCurlHandle()
+
   
   auth <- signRequest(url, params, consumerKey, consumerSecret,
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
@@ -158,6 +159,9 @@ oauthCommand <-
   if(!missing(.opts) && length(args <- list(...)))
      .opts = merge(.opts, args)
   .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
+
+  if(.command == "PUT" && !("upload" %in% names(.opts)))
+      .opts["upload"] = TRUE
 
   curlPerform(curl = curl, url = url, .opts = .opts)
 }

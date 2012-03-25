@@ -13,7 +13,7 @@ setClass("OAuthCredentials",
 setMethod("$", "OAuthCredentials",
           function(x, name) {
             if(tolower(name) %in% c("put", "delete", "post"))
-               function(url, params, ...) {
+               function(url, params = character(), ...) {
                  oauthCommand(url, x@consumerKey, x@consumerSecret, x@oauthKey, x@oauthSecret,
                                 params, ..., .command = toupper(name))
                }
