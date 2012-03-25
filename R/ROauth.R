@@ -145,7 +145,7 @@ oauthCommand <-
   function(url, consumerKey, consumerSecret,
            oauthKey, oauthSecret, params = character(), customHeader = NULL,
            curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command,
-           .opts = list(...))
+           .opts = list(...), .addwritefunction = TRUE)
 {
   if(is.null(curl))
     curl <- getCurlHandle()
@@ -155,22 +155,35 @@ oauthCommand <-
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
                      httpMethod = .command, signMethod = signMethod, callback = callback)
 
-#  .opts = list(...)
   if(!missing(.opts) && length(args <- list(...)))
      .opts = merge(.opts, args)
   .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
 
   if(.command == "PUT" && !("upload" %in% names(.opts)))
       .opts["upload"] = TRUE
+  else if(!("customrequest" %in% names(.opts)))
+       .opts[["customrequest"]] = toupper(.command)
 
-  curlPerform(curl = curl, url = url, .opts = .opts)
+  reader = NULL
+  if(.addwritefunction) {
+     reader <- dynCurlReader(curl, baseURL = url)
+     .opts[["writefunction"]] = reader$update
+  }
+
+  ans = curlPerform(curl = curl, url = url, .opts = .opts)
+
+  if(!is.null(reader))
+    reader$value()
+  else
+     ans
 }
 
 oauthPUT <- function(...)
    oauthCommand(..., .command = "PUT", upload = TRUE)
 
-oauthDELETE <- function(...)
+oauthDELETE <- function(...) {
    oauthCommand(..., .command = "DELETE")
+ }
 
 
 oauthPOST <- function(url, consumerKey, consumerSecret,
