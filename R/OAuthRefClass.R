@@ -53,7 +53,7 @@ setRefClass("OAuth",
               },
               
               OAuthRequest = function(URL, params = character(), method = "GET",
-                                      customHeader = NULL, curl = getCurlHandle(), ...) #, .opts = list())
+                                      customHeader = .self$customHeader, curl = getCurlHandle(), ...) #, .opts = list())
                {
                 ' If the OAuth handshake has been completed, will
                 submit a URL request with an OAuth signature, returning
@@ -66,12 +66,13 @@ setRefClass("OAuth",
                                    POST = oauthPOST,
                                    GET = oauthGET,
                                    PUT = oauthPUT,
+                                   DELETE = oauthDELETE,
                                    stop("method must be POST, PUT or GET"))
 
                 httpFunc(URLencode(URL), params = params, consumerKey = .self$consumerKey,
                          consumerSecret = .self$consumerSecret,
                          oauthKey = .self$oauthKey, oauthSecret = .self$oauthSecret,
-                         customHeader = .self$customHeader, curl = curl, #XXX use customHeader in formals.
+                         customHeader = customHeader, curl = curl, 
                          signMethod = .self$signMethod, ...)#, .opts = .opts)
               }
               )

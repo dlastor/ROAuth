@@ -52,6 +52,7 @@ signRequest  <- function(url, params, consumerKey, consumerSecret,
     sig <- curlPercentEncode(sig) #XXX Should this be escapeFun(sig)
   }
   params["oauth_signature"] <- sig
+  
   params[grepl("^oauth_", names(params))]
 }
 

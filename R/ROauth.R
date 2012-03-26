@@ -90,12 +90,9 @@ function(cred, post = TRUE,
 }
 
 
-
-
-
 OAuthRequest =
   function(cred, URL, params = character(), method = "GET",
-           customHeader = "", curl = getCurlHandle(), ...) #, .opts = list())
+           customHeader = NULL, curl = getCurlHandle(), ...) #, .opts = list())
 {
     ' If the OAuth handshake has been completed, will
       submit a URL request with an OAuth signature, returning
@@ -154,10 +151,11 @@ oauthCommand <-
   auth <- signRequest(url, params, consumerKey, consumerSecret,
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
                      httpMethod = .command, signMethod = signMethod, callback = callback)
+                      
 
   if(!missing(.opts) && length(args <- list(...)))
      .opts = merge(.opts, args)
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader)
 
   if(.command == "PUT" && !("upload" %in% names(.opts)))
       .opts["upload"] = TRUE
@@ -198,7 +196,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
                       httpMethod = "POST", signMethod = signMethod,
                       handshakeComplete = handshakeComplete, callback = callback)
 
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader)
   
   ## post ,specify the method
   ## We should be able to use postForm() but we have to work out the issues
@@ -242,17 +240,20 @@ oauthGET <- function(url, consumerKey, consumerSecret,
 
 addAuthorizationHeader =
     # Add the Authorization header field.  
-function(.opts, auth, secret)
+function(.opts, auth, secret, customHeader = character())
 {
  if(length(secret) == 0)  #  !("oauth_secret" %in% names(auth)) || auth[["oauth_secret"]] == "")
     return(.opts)
+
+ if(length(customHeader))
+   auth[names(customHeader)] = customHeader
  
   tmp = paste(names(auth), auth, sep = "=", collapse = ", ")
 
   if("httpheader" %in% names(.opts))
      .opts$httpheader[["Authorization"]] = sprintf('OAuth realm="", %s', tmp)
   else
-        .opts$httpheader = c("Authorization" = sprintf('OAuth realm="", %s', tmp))
+     .opts$httpheader = c("Authorization" = sprintf('OAuth realm="", %s', tmp))
 
   .opts
 }
