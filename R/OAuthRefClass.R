@@ -40,6 +40,7 @@ setRefClass("OAuth",
                 oauthSecret <<- obj@oauthSecret
                 
                 handshakeComplete <<- TRUE
+                .self
               },
               
               isVerified = function() {

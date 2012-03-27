@@ -5,10 +5,10 @@
   This function invokes a REST Web service method
   using the OAuth credentials previously negotiated
   to allow authorized requests.
-  
 }
 \usage{
-OAuthRequest(cred, URL, params = character(), method = "GET", customHeader = NULL, curl = getCurlHandle(), ...)
+OAuthRequest(cred, URL, params = character(), method = "GET",
+              customHeader = NULL, curl = getCurlHandle(), ...)
 }
 
 \arguments{

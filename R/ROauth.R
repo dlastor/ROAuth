@@ -109,7 +109,9 @@ OAuthRequest =
                        POST = oauthPOST,
                        GET = oauthGET,
                        PUT = oauthPUT,
-                       stop("method must be POST, PUT or GET"))
+                       DELETE = oauthDELETE,
+                       HEAD = oauthHEAD,
+                       stop("method must be POST, PUT, GET, DELETE or HEAD"))
 
     httpFunc(URLencode(URL), params = params,
              consumerKey = .self@consumerKey,
@@ -175,6 +177,9 @@ oauthCommand <-
   else
      ans
 }
+
+oauthHEAD <- function(...)
+   oauthCommand(..., .command = "HEAD", upload = TRUE)
 
 oauthPUT <- function(...)
    oauthCommand(..., .command = "PUT", upload = TRUE)

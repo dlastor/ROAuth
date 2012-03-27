@@ -12,12 +12,19 @@ setClass("OAuthCredentials",
 
 setMethod("$", "OAuthCredentials",
           function(x, name) {
-            if(tolower(name) %in% c("put", "delete", "post"))
+            if(name == "handshake") {
+                 function(...)
+                     handshake(x, ...)
+            
+            } else if(tolower(name) %in% c("put", "delete")) {
                function(url, params = character(), ...) {
                  oauthCommand(url, x@consumerKey, x@consumerSecret, x@oauthKey, x@oauthSecret,
                                 params, ..., .command = toupper(name))
                }
-            else {
+            } else if(name == "OAuthRequest") {
+                 function(...)
+                     OAuthRequest(x, ...)
+            } else {
                f = switch(tolower(name),
                            get = oauthGET,
                            post = oauthPOST,
