@@ -1,0 +1,17 @@
+[Low] Merge reference class' OAuthRequest function with the one
+      in ROauth.R
+
+           It is a pretty simple function.
+
+Use OAuthCredentials as a single field in the reference class
+so we can avoid 
+
+[Done] writefunction option for oauthPUT, DELETE, etc.
+
+[Okay] Make the $ method for OAuthCredentials use oauthPUT, etc. 
+  rather than its own function.
+
+   oauthCommand() handles writefunction and upload for PUT, etc.
+   so all is fine.
+
+Split the verify part of authorize()/handshake() into its own function.

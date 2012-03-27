@@ -11,7 +11,8 @@ setRefClass("OAuth",
               authURL = "character",
               accessURL = "character",
               signMethod = 'character',
-              postRequest = 'logical'
+              postRequest = 'logical',
+              customHeader = 'character'
              ),
             methods = list(
               initialize = function(needsVerifier, ...) {
