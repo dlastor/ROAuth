@@ -1,124 +1,128 @@
-setRefClass("OAuth",
-            fields = list(
-              consumerKey = "character",
-              consumerSecret = "character",
-              oauthKey = "character",
-              oauthSecret = "character",
-              needsVerifier = "logical",
-              handshakeComplete = "logical",
-              verifier = "character",
-              requestURL = "character",
-              authURL = "character",
-              accessURL = "character",
-              signMethod = 'character',
-              postRequest = 'logical'
-              ),
-            methods = list(
-              initialize = function(needsVerifier, ...) {
-                if (!missing(needsVerifier))
-                  needsVerifier <<- needsVerifier
-                else
-                  needsVerifier <<- TRUE
-                handshakeComplete <<- FALSE
-                postRequest <<- TRUE
-                callSuper(...)
-                .self
-              },
-              
-              handshake = function(signMethod='HMAC', curl=getCurlHandle(), post = .self$postRequest, ...) {
-                ' Performs the OAuth handshake.  In most cases
-                  the user will need to complete a manual step
-                  with their web browser, entering a PIN into
-                  this function.
-                '
-                handshakeComplete <<- FALSE
-                signMethod <<- signMethod
+setAs("OAuth", "OAuthCredentials",
+          function(from) {
+            new("OAuthCredentials",
+                 consumerKey = from$consumerKey,
+                 consumerSecret = from$consumerSecret,
+                 oauthKey = from$oauthKey,
+                 oauthSecret = from$oauthSecret,
+                 signMethod = from$signMethod,
+                 authURL = from$authURL,
+                 accessURL = from$accessURL,
+                 requestURL = from$requestURL
+               )
+          })
 
-                op = if(post) oauthPOST else oauthGET
+
+oauth =
+function(consumerKey, consumerSecret,
+         requestURL, authURL, accessURL,
+         signMethod = 'HMAC',
+         obj = new("OAuthCredentials"))
+{
+  obj@consumerKey = consumerKey
+  obj@consumerSecret = consumerSecret
+  obj@requestURL = requestURL
+  obj@authURL = authURL
+  obj@accessURL = accessURL
+  obj@signMethod = signMethod
+
+  obj
+}
+
+handshake = authorize =
+function(cred, post = TRUE,
+         signMethod = 'HMAC', curl = getCurlHandle(),
+         verify = TRUE, ...
+        )
+{
+  if(!is(cred, "OAuthCredentials"))
+      cred = as(cred, "OAuthCredentials")
+  
+  op = if(post) oauthPOST else oauthGET
                 
-                resp <- op(.self$requestURL, 
-                                  .self$consumerKey,
-                                  .self$consumerSecret,
-                                  NULL, NULL, signMethod=.self$signMethod, curl=curl,
-                                  handshakeComplete = .self$handshakeComplete, ...) # , callback = "oob")
-                vals <- parseResponse(resp)
-                if (!all(c('oauth_token', 'oauth_token_secret') %in%
-                         names(vals))) {
-                  stop("Invalid response from site, please ",
-                     "check your consumerKey and consumerSecret",
-                     " and try again.")
-                }
-                oauthKey <<- vals['oauth_token']
-                oauthSecret <<- vals['oauth_token_secret']
-                if (.self$needsVerifier) {
-                  verifyURL <- paste(.self$authURL, "?oauth_token=",
-                                     oauthKey, sep='')
-                  msg <- paste("To enable the connection, please direct",
-                               " your web browser to: \n",
-                               verifyURL,
-                               "\nWhen complete, record the PIN given ",
-                               "to you and provide it here, or hit enter: ", sep='')
-                  browseURL(verifyURL)
-                  verifier <<- readline(prompt = msg)
-                }
-                params <- c(oauth_verifier=.self$verifier)
-                resp <- op(.self$accessURL, .self$consumerKey, .self$consumerSecret,
-                            .self$oauthKey, .self$oauthSecret, signMethod=.self$signMethod,
-                              curl=getCurlHandle(), params = params,
-                              handshakeComplete = .self$handshakeComplete, ..., callback = "oob")
-                vals <- parseResponse(resp)
-                if (!all(c('oauth_token', 'oauth_token_secret') %in%
-                         names(vals))) {
-                  stop("Invalid response after authorization.  ",
+  resp <- op(cred@requestURL, cred@consumerKey, cred@consumerSecret,
+             NULL, NULL, signMethod = cred@signMethod, curl = curl,
+             handshakeComplete = FALSE, ...) # , callback = "oob")
+  vals <- parseResponse(resp)
+  if (!all(c('oauth_token', 'oauth_token_secret') %in%
+           names(vals))) {
+    stop("Invalid response from site, please ",
+         "check your consumerKey and consumerSecret",
+         " and try again.")
+  }
+
+  
+  oauthKey = cred@oauthKey = vals['oauth_token']
+  oauthSecret = cred@oauthSecret = vals['oauth_token_secret']
+  
+  if (verify) {
+    verifyURL <- paste(cred@authURL, "?oauth_token=",
+                         oauthKey, sep='')
+    msg <- paste("To enable the connection, please direct",
+                 " your web browser to: \n",
+                 verifyURL,
+                 "\nWhen complete, record the PIN given ",
+                 "to you and provide it here, or hit enter: ", sep='')
+    browseURL(verifyURL)
+    verifier <- readline(prompt = msg)
+  } else
+    verifier <- ""  
+  
+  params <- c(oauth_verifier = verifier)
+  resp <- op(cred@accessURL, cred@consumerKey, cred@consumerSecret,
+             cred@oauthKey, cred@oauthSecret, signMethod = cred@signMethod,
+             curl = curl, params = params,
+             handshakeComplete = FALSE, ..., callback = "oob")
+
+  vals <- parseResponse(resp)
+  if (!all(c('oauth_token', 'oauth_token_secret') %in%
+           names(vals))) {
+    stop("Invalid response after authorization.  ",
                        "You likely misentered your PIN, try rerunning",
                        " this handshake & browser authorization to get",
                        " a new PIN.")
-                }
-                oauthKey <<- vals['oauth_token']
-                oauthSecret <<- vals['oauth_token_secret']
-                handshakeComplete <<- TRUE
-              },
+  }
+
+  cred@oauthKey = vals['oauth_token']
+  cred@oauthSecret = vals['oauth_token_secret']  
+
+  cred
+}
+
+
+OAuthRequest =
+  function(cred, URL, params = character(), method = "GET",
+           customHeader = NULL, curl = getCurlHandle(), ...) #, .opts = list())
+{
+    ' If the OAuth handshake has been completed, will
+      submit a URL request with an OAuth signature, returning
+      any response from the server
+    '
+
+    .self = as(cred, "OAuthCredentials")
+
+    #XXX both OAuthCredentials and a reference class .self
+    if (! length(.self@oauthSecret))
+      stop("This OAuth instance has not been verified")
+
+    httpFunc <- switch(method,
+                       POST = oauthPOST,
+                       GET = oauthGET,
+                       PUT = oauthPUT,
+                       DELETE = oauthDELETE,
+                       HEAD = oauthHEAD,
+                       stop("method must be POST, PUT, GET, DELETE or HEAD"))
+
+    httpFunc(URLencode(URL), params = params,
+             consumerKey = .self@consumerKey,
+             consumerSecret = .self@consumerSecret,
+             oauthKey = .self@oauthKey,
+             oauthSecret = .self@oauthSecret,
+             customHeader = customHeader, curl = curl, #XXX use customHeader in formals.
+             signMethod = .self@signMethod, ...)#, .opts = .opts)
+}
               
-              isVerified = function() {
-                'Will report if this object is verified or not.
-                 Verification can either involve not needing it
-                 in the first place, or as part of the handshake'
-                if (.self$needsVerifier)
-                  length(verifier) != 0
-                else
-                  TRUE
-              },
-              
-              OAuthRequest =
-                  function(URL, params = character(), method = "GET",
-                            customHeader = NULL, curl = getCurlHandle(), ...) 
-               {
-                ' If the OAuth handshake has been completed, will
-                submit a URL request with an OAuth signature, returning
-                any response from the server
-                '
-                if (! .self$handshakeComplete)
-                  stop("This OAuth instance has not been verified")
 
-                httpFunc <- switch(method,
-                                   POST = oauthPOST,
-                                   GET = oauthGET,
-                                   PUT = oauthPUT,
-                                   stop("method must be POST, PUT or GET"))
-
-                httpFunc(URLencode(URL), params = params,
-                         consumerKey = .self$consumerKey,
-                         consumerSecret = .self$consumerSecret,
-                         oauthKey = .self$oauthKey,
-                         oauthSecret = .self$oauthSecret,
-                         customHeader = .self$customHeader, curl = curl, #XXX use customHeader in formals.
-                         signMethod = .self$signMethod, ...)
-              }
-              )
-            )
-
-OAuthFactory <- getRefClass("OAuth")
-OAuthFactory$accessors(names(OAuthFactory$fields()))
 
 
 parseResponse <- function(response) {
@@ -141,28 +145,49 @@ oauthCommand <-
   function(url, consumerKey, consumerSecret,
            oauthKey, oauthSecret, params = character(), customHeader = NULL,
            curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command,
-           .opts = list(...))
+           .opts = list(...), .addwritefunction = TRUE)
 {
   if(is.null(curl))
     curl <- getCurlHandle()
+
   
   auth <- signRequest(url, params, consumerKey, consumerSecret,
                       oauthKey = oauthKey, oauthSecret = oauthSecret,
                      httpMethod = .command, signMethod = signMethod, callback = callback)
+                      
 
-#  .opts = list(...)
   if(!missing(.opts) && length(args <- list(...)))
      .opts = merge(.opts, args)
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader)
 
-  curlPerform(curl = curl, url = url, .opts = .opts)
+  if(.command == "PUT" && !("upload" %in% names(.opts)))
+      .opts["upload"] = TRUE
+  else if(!("customrequest" %in% names(.opts)))
+       .opts[["customrequest"]] = toupper(.command)
+
+  reader = NULL
+  if(.addwritefunction) {
+     reader <- dynCurlReader(curl, baseURL = url)
+     .opts[["writefunction"]] = reader$update
+  }
+
+  ans = curlPerform(curl = curl, url = url, .opts = .opts)
+
+  if(!is.null(reader))
+    reader$value()
+  else
+     ans
 }
+
+oauthHEAD <- function(...)
+   oauthCommand(..., .command = "HEAD", upload = TRUE)
 
 oauthPUT <- function(...)
    oauthCommand(..., .command = "PUT", upload = TRUE)
 
-oauthDELETE <- function(...)
+oauthDELETE <- function(...) {
    oauthCommand(..., .command = "DELETE")
+ }
 
 
 oauthPOST <- function(url, consumerKey, consumerSecret,
@@ -177,7 +202,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
                       httpMethod = "POST", signMethod = signMethod,
                       handshakeComplete = handshakeComplete, callback = callback)
 
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader)
   
   ## post ,specify the method
   ## We should be able to use postForm() but we have to work out the issues
@@ -221,17 +246,20 @@ oauthGET <- function(url, consumerKey, consumerSecret,
 
 addAuthorizationHeader =
     # Add the Authorization header field.  
-function(.opts, auth, secret)
+function(.opts, auth, secret, customHeader = character())
 {
  if(length(secret) == 0)  #  !("oauth_secret" %in% names(auth)) || auth[["oauth_secret"]] == "")
     return(.opts)
+
+ if(length(customHeader))
+   auth[names(customHeader)] = customHeader
  
   tmp = paste(names(auth), auth, sep = "=", collapse = ", ")
 
   if("httpheader" %in% names(.opts))
      .opts$httpheader[["Authorization"]] = sprintf('OAuth realm="", %s', tmp)
   else
-        .opts$httpheader = c("Authorization" = sprintf('OAuth realm="", %s', tmp))
+     .opts$httpheader = c("Authorization" = sprintf('OAuth realm="", %s', tmp))
 
   .opts
 }

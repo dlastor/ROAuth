@@ -73,7 +73,10 @@
   The \code{customHeader} argument to \code{OAuthRequest} can be used to
   pass additional HTTP header commands to the underlying request.
 
-  The \code{curl} arguments can be used to provide a custom curl header, defaulting to a generic \code{getCurlHandle} call.
+  The \code{curl} arguments can be used to provide a custom curl handler
+  object used to communicate the request and response. This defaults
+  to a \code{getCurlHandle} call, customized by any settings in the
+  R option \code{RCurlOptions}.
 }
 
 \section{Extends}{

@@ -3,3 +3,9 @@ import("methods")
 exportClass("OAuth")
 export("OAuthFactory")
 
+exportClass("OAuthCredentials")
+export(oauth, authorize, handshake,
+       OAuthRequest)
+exportMethods("$") #, "OAuthCredentials")
+
+
