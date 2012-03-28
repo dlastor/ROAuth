@@ -3,6 +3,13 @@ Title: R interface for OAuth
 Description: This package provides an interface to the OAuth 1.0
         specification, allowing users to authenticate via OAuth to the
         server of their choice.
+        It provides an S4 OAuthCredentials class and also an OAuth
+        reference-based class. The S4 approach is preferred.
+        Having created the OAuthCredentials object (via oauth),
+        one completes the handshake to grant permission and
+        obtain an access token (key and secret).  These can then
+        be used to make OAuth-enticated HTTP requests to access privileged
+        data using the OAuthRequest function.
 Version: 0.92.0
 Author: Jeff Gentry <geoffjentry@gmail.com>, Duncan Temple Lang
         <duncan@r-project.org>
@@ -11,4 +18,8 @@ Depends: R (>= 2.12.0), RCurl (>= 1.6-4), digest, methods
 Imports: methods
 License: Artistic-2.0
 Collate: class.R OAuthRefClass.R ROauth.R sign.R
-
+GitHub:  You can download the lastest (development) version and previous versions 
+         in source form from 
+           https://github.com/duncantl/ROAuth.git
+         or
+           https://github.com/geoffjentry/ROAuth.git

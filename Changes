@@ -1,0 +1,8 @@
+0.92-0
+
+  *  S4 OAuthCredentials class and support for using that in place of
+     the reference-based class OAuth.
+
+  *  Fixes to parts of the code to use the caller-supplied curl handle,
+     customHeader, etc. where a different value was being used.
+
