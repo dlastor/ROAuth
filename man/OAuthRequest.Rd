@@ -8,7 +8,8 @@
 }
 \usage{
 OAuthRequest(cred, URL, params = character(), method = "GET",
-              customHeader = NULL, curl = getCurlHandle(), ...)
+              customHeader = NULL, curl = getCurlHandle(),
+               ..., binary = NA)
 }
 
 \arguments{
@@ -35,6 +36,18 @@ OAuthRequest(cred, URL, params = character(), method = "GET",
   \item{curl}{a CURL handle instance used to make the request}
   \item{\dots}{options that are passed to \code{curlPerform} to
     customize the HTTP request}
+  \item{binary}{a logical value that identifies whether the result
+    should be treated as binary content or text. The
+    \code{\link[RCurl]{dynCurlReader}}
+    function uses this to govern how it handles the content of the HTTP
+    response.
+    If this is \code{NA},   \code{\link[RCurl]{dynCurlReader}}
+    uses the Content-Type in the HTTP response' header to determine
+    what to do. The caller should specify this if
+    \code{\link[RCurl]{dynCurlReader}} will get this wrong,
+    either because it doesn't know about a certain MIME type
+    or because the MIME type returned by the Web server is incorrect.
+   }
 }
 
 \value{

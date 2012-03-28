@@ -42,7 +42,7 @@ function(cred, post = TRUE,
                 
   resp <- op(cred@requestURL, cred@consumerKey, cred@consumerSecret,
              NULL, NULL, signMethod = cred@signMethod, curl = curl,
-             handshakeComplete = FALSE, ...) # , callback = "oob")
+             handshakeComplete = FALSE, ..., binary = FALSE) # , callback = "oob")
   vals <- parseResponse(resp)
   if (!all(c('oauth_token', 'oauth_token_secret') %in%
            names(vals))) {
@@ -72,7 +72,7 @@ function(cred, post = TRUE,
   resp <- op(cred@accessURL, cred@consumerKey, cred@consumerSecret,
              cred@oauthKey, cred@oauthSecret, signMethod = cred@signMethod,
              curl = curl, params = params,
-             handshakeComplete = FALSE, ..., callback = "oob")
+             handshakeComplete = FALSE, ..., callback = "oob", binary = FALSE)
 
   vals <- parseResponse(resp)
   if (!all(c('oauth_token', 'oauth_token_secret') %in%
@@ -92,7 +92,7 @@ function(cred, post = TRUE,
 
 OAuthRequest =
   function(cred, URL, params = character(), method = "GET",
-           customHeader = NULL, curl = getCurlHandle(), ...) #, .opts = list())
+           customHeader = NULL, curl = getCurlHandle(), ..., binary = NA) #, .opts = list())
 {
     ' If the OAuth handshake has been completed, will
       submit a URL request with an OAuth signature, returning
@@ -119,7 +119,7 @@ OAuthRequest =
              oauthKey = .self@oauthKey,
              oauthSecret = .self@oauthSecret,
              customHeader = customHeader, curl = curl, #XXX use customHeader in formals.
-             signMethod = .self@signMethod, ...)#, .opts = .opts)
+             signMethod = .self@signMethod, ..., binary = binary)#, .opts = .opts)
 }
               
 
@@ -145,7 +145,7 @@ oauthCommand <-
   function(url, consumerKey, consumerSecret,
            oauthKey, oauthSecret, params = character(), customHeader = NULL,
            curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command,
-           .opts = list(...), .addwritefunction = TRUE)
+           .opts = list(...), .addwritefunction = TRUE, binary = NA)
 {
   if(is.null(curl))
     curl <- getCurlHandle()
@@ -167,7 +167,7 @@ oauthCommand <-
 
   reader = NULL
   if(.addwritefunction) {
-     reader <- dynCurlReader(curl, baseURL = url)
+     reader <- dynCurlReader(curl, baseURL = url, binary = binary)
      .opts[["writefunction"]] = reader$update
   }
 
@@ -193,7 +193,7 @@ oauthDELETE <- function(...) {
 oauthPOST <- function(url, consumerKey, consumerSecret,
                       oauthKey, oauthSecret, params = character(), customHeader = NULL,
                       curl = getCurlHandle(), signMethod = 'HMAC', handshakeComplete = TRUE,
-                      ..., callback = character(), .opts = list(...)) {
+                      ..., callback = character(), .opts = list(...), binary = NA) {
   if(is.null(curl))
     curl <- getCurlHandle()
   
@@ -208,7 +208,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
   ## We should be able to use postForm() but we have to work out the issues
   ## with escaping, etc. to match the signature mechanism.
   if (length(params) == 0) {
-    reader <- dynCurlReader(curl, baseURL = url, verbose = FALSE)
+    reader <- dynCurlReader(curl, baseURL = url, verbose = FALSE, binary = binary)
     fields <- paste(names(auth), sapply(auth, curlPercentEncode),
                     sep = "=", collapse = "&")
     curlPerform(curl = curl, URL = url, postfields = fields,
@@ -225,7 +225,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
 oauthGET <- function(url, consumerKey, consumerSecret,
                      oauthKey, oauthSecret, params=character(), customHeader = NULL,
                      curl = getCurlHandle(), signMethod='HMAC', handshakeComplete = TRUE,
-                      ..., .opts = list(...), callback = character()) {
+                      ..., .opts = list(...), callback = character(), binary = binary) {
   ##   opts = list(httpheader = c(Authentication = paste(names(auth),  auth, sep = "=", collapse = "\n   ")), ...)
   if(is.null(curl))
     curl <- getCurlHandle()
@@ -241,7 +241,7 @@ oauthGET <- function(url, consumerKey, consumerSecret,
   .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
 
   
-  getForm(url, .params = params, curl = curl, .opts = .opts)
+  getForm(url, .params = params, curl = curl, .opts = .opts, binary = binary)
 }
 
 addAuthorizationHeader =

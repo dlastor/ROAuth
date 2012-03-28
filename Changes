@@ -6,3 +6,4 @@
   *  Fixes to parts of the code to use the caller-supplied curl handle,
      customHeader, etc. where a different value was being used.
 
+  *  Added a binary argument to OAuthRequest and the helper functions oauthGET, etc.
