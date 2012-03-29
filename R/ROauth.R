@@ -32,7 +32,7 @@ function(consumerKey, consumerSecret,
 handshake = authorize =
 function(cred, post = TRUE,
          signMethod = 'HMAC', curl = getCurlHandle(),
-         verify = TRUE, ...
+         verify = length(cred@authURL) > 0, ...
         )
 {
   if(!is(cred, "OAuthCredentials"))
@@ -55,10 +55,13 @@ function(cred, post = TRUE,
   oauthKey = cred@oauthKey = vals['oauth_token']
   oauthSecret = cred@oauthSecret = vals['oauth_token_secret']
   
-  if (verify) {
+  if (is.character(verify) || is.logical(verify)) {
     verifyURL <- paste(cred@authURL, "?oauth_token=",
                          oauthKey, sep='')
-    msg <- paste("To enable the connection, please direct",
+    msg <- if(is.character(verify))
+               verify
+           else
+               paste("To enable the connection, please direct",
                  " your web browser to: \n",
                  verifyURL,
                  "\nWhen complete, record the PIN given ",

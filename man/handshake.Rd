@@ -14,7 +14,8 @@
   to use this authorization PIN/code to obtain 
 }
 \usage{
-handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(), verify = TRUE, ...)
+handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(),
+           verify = length(cred@authURL) > 0, ...)
 }
 \arguments{
   \item{cred}{an object of class \code{OAuthCredentials} that provides
@@ -28,8 +29,10 @@ handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(), verify
     to the same server. This can be supplied to provide continuity
     across calls and reduce the overhead of establishing the connection.
     It can also be used to customize the connection outside of the call.}
-  \item{verify}{a logical value that controls whether we have to return
-    to the Web server to make the user explicitly authorize access.}
+  \item{verify}{either a logical value that controls whether we have to return
+    to the Web server to make the user explicitly authorize access or a
+     character string that is used as a message to tell the user how to
+     grant permissions for this "application" to access the OAuth service.}
   \item{\dots}{additional arguments passed to the \code{curlPerform} call.}
 }
 \value{
