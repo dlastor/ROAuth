@@ -61,8 +61,6 @@ Duncan Temple Lang
   \code{\link{oauth}}
   \code{\link{handshake}}
 }
-\examples{
-
-}
+%\examples{}
 \keyword{IO}
 

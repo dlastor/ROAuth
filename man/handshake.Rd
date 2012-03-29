@@ -14,11 +14,11 @@
   to use this authorization PIN/code to obtain 
 }
 \usage{
-handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(),
-           verify = length(authURL) > 0,
-            requestURL = cred@requestURL,
+handshake(cred, requestURL = cred@requestURL,
             authURL = cred@authURL,
-            accessURL = cred@accessURL, ...)
+            accessURL = cred@accessURL,
+            post = TRUE, signMethod = "HMAC",
+            curl = getCurlHandle(), verify = length(authURL) > 0,...)
 }
 \arguments{
   \item{cred}{an object of class \code{OAuthCredentials} that provides
@@ -51,8 +51,7 @@ handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(),
 \value{
   an updated version of \code{cred}, the \code{OAuthCredentials}.
 }
-\references{
-}
+%\references{}
 \author{
 Duncan Temple Lang
 }

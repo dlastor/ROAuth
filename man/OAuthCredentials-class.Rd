@@ -58,7 +58,7 @@
     }
    }
 }
-\references{}
+%\references{}
 \author{
 Duncan Temple Lang
 }
@@ -70,5 +70,16 @@ Duncan Temple Lang
 }
 \examples{
 
+  setClass("DropboxCredentials", contains = "OAuthCredentials")
+
+  cred = oauth("myKey", "mySecret",
+               requestURL = "https://api.dropbox.com/1/oauth/request_token",
+               authURL = "https://www.dropbox.com/1/oauth/authorize",
+               accessURL = "https://api.dropbox.com/1/oauth/access_token/",
+               obj = new("DropboxCredentials"))
+
+\dontrun{
+   cred = handshake(cred)
+}
 }
 \keyword{classes}

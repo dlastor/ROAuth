@@ -53,8 +53,7 @@ function(cred,
                   accessURL = accessURL,
                   authURL = if(!missing(authURL)) authURL else character(),
                   signMethod = signMethod)
-                )
-  }
+   }
   
   if(!is(cred, "OAuthCredentials"))
       cred = as(cred, "OAuthCredentials")
