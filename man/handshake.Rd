@@ -15,7 +15,10 @@
 }
 \usage{
 handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(),
-           verify = length(cred@authURL) > 0, ...)
+           verify = length(authURL) > 0,
+            requestURL = cred@requestURL,
+            authURL = cred@authURL,
+            accessURL = cred@accessURL, ...)
 }
 \arguments{
   \item{cred}{an object of class \code{OAuthCredentials} that provides
@@ -32,7 +35,17 @@ handshake(cred, post = TRUE, signMethod = "HMAC", curl = getCurlHandle(),
   \item{verify}{either a logical value that controls whether we have to return
     to the Web server to make the user explicitly authorize access or a
      character string that is used as a message to tell the user how to
-     grant permissions for this "application" to access the OAuth service.}
+     grant permissions for this "application" to access the OAuth
+     service.}
+   \item{requestURL, authURL, accessURL}{strings specifying the
+     URLs for requesting the initial token for the application,
+     for the user to authorize the applications token, and
+     finally for exchanging the verified token for an access token with
+     which we can make requests for data.  These are typically store in
+   the \code{cred} object so that it is easy to renew the acccess token
+   by calling \code{handshake} again. However, these parameters allow
+   them to be specified separately and the \code{OAuthCredentials}
+   object to be used solely for the tokens, i.e. keys and secrets}
   \item{\dots}{additional arguments passed to the \code{curlPerform} call.}
 }
 \value{

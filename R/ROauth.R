@@ -15,7 +15,7 @@ setAs("OAuth", "OAuthCredentials",
 
 oauth =
 function(consumerKey, consumerSecret,
-         requestURL, authURL, accessURL,
+         requestURL, authURL = character(), accessURL,
          signMethod = 'HMAC',
          obj = new("OAuthCredentials"))
 {
@@ -30,18 +30,39 @@ function(consumerKey, consumerSecret,
 }
 
 handshake = authorize =
-function(cred, post = TRUE,
+function(cred,
+         requestURL = cred@requestURL,
+         authURL = cred@authURL,
+         accessURL = cred@accessURL,
+         post = TRUE,
          signMethod = 'HMAC', curl = getCurlHandle(),
-         verify = length(cred@authURL) > 0, ...
+         verify = length(authURL) > 0, ...
         )
 {
+  if(missing(signMethod) && is(cred, "OAuthCredentials") &&
+        length(cred@signMethod))
+    signMethod = cred@signMethod
+
+  
+  if(is(cred, "character")) {
+        # Handle case where we only have one string, but names.
+        # This doesn't make sense if requestURL, accessURL aren't explicitly specified.
+     cred = new("OAuthCredentials",
+                  consumerKey = cred[1], consumerSecret = cred[2],
+                  requestURL = requestURL,
+                  accessURL = accessURL,
+                  authURL = if(!missing(authURL)) authURL else character(),
+                  signMethod = signMethod)
+                )
+  }
+  
   if(!is(cred, "OAuthCredentials"))
       cred = as(cred, "OAuthCredentials")
   
   op = if(post) oauthPOST else oauthGET
                 
-  resp <- op(cred@requestURL, cred@consumerKey, cred@consumerSecret,
-             NULL, NULL, signMethod = cred@signMethod, curl = curl,
+  resp <- op(requestURL, cred@consumerKey, cred@consumerSecret,
+             NULL, NULL, signMethod = signMethod, curl = curl,
              handshakeComplete = FALSE, ..., binary = FALSE) # , callback = "oob")
   vals <- parseResponse(resp)
   if (!all(c('oauth_token', 'oauth_token_secret') %in%
@@ -55,8 +76,8 @@ function(cred, post = TRUE,
   oauthKey = cred@oauthKey = vals['oauth_token']
   oauthSecret = cred@oauthSecret = vals['oauth_token_secret']
   
-  if (is.character(verify) || is.logical(verify)) {
-    verifyURL <- paste(cred@authURL, "?oauth_token=",
+  if(is.character(verify) || (is.logical(verify) && verify)) {
+    verifyURL <- paste(authURL, "?oauth_token=",
                          oauthKey, sep='')
     msg <- if(is.character(verify))
                verify
@@ -72,8 +93,8 @@ function(cred, post = TRUE,
     verifier <- ""  
   
   params <- c(oauth_verifier = verifier)
-  resp <- op(cred@accessURL, cred@consumerKey, cred@consumerSecret,
-             cred@oauthKey, cred@oauthSecret, signMethod = cred@signMethod,
+  resp <- op(accessURL, cred@consumerKey, cred@consumerSecret,
+             cred@oauthKey, cred@oauthSecret, signMethod = signMethod,
              curl = curl, params = params,
              handshakeComplete = FALSE, ..., callback = "oob", binary = FALSE)
 
