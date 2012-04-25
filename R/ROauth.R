@@ -216,7 +216,8 @@ oauthDELETE <- function(...) {
 oauthPOST <- function(url, consumerKey, consumerSecret,
                       oauthKey, oauthSecret, params = character(), customHeader = NULL,
                       curl = getCurlHandle(), signMethod = 'HMAC', handshakeComplete = TRUE,
-                      ..., callback = character(), .opts = list(...), binary = NA) {
+                      ..., callback = character(), .opts = list(...), binary = NA,
+                      .addwritefunction = TRUE) {
   if(is.null(curl))
     curl <- getCurlHandle()
   
