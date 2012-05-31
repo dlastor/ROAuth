@@ -168,7 +168,7 @@ oauthCommand <-
   function(url, consumerKey, consumerSecret,
            oauthKey, oauthSecret, params = character(), customHeader = NULL,
            curl = getCurlHandle(), signMethod = 'HMAC', ..., callback = character(), .command,
-           .opts = list(...), .addwritefunction = TRUE, binary = NA)
+           .opts = list(...), .addwritefunction = TRUE, binary = NA, handshakeComplete = TRUE)
 {
   if(is.null(curl))
     curl <- getCurlHandle()
@@ -181,7 +181,7 @@ oauthCommand <-
 
   if(!missing(.opts) && length(args <- list(...)))
      .opts = merge(.opts, args)
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader, handshakeComplete)
 
   if(.command == "PUT" && !("upload" %in% names(.opts)))
       .opts["upload"] = TRUE
@@ -217,7 +217,7 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
                       oauthKey, oauthSecret, params = character(), customHeader = NULL,
                       curl = getCurlHandle(), signMethod = 'HMAC', handshakeComplete = TRUE,
                       ..., callback = character(), .opts = list(...), binary = NA,
-                      .addwritefunction = TRUE) {
+                      .addwritefunction = TRUE, includeOAuthInfoInBody = !handshakeComplete) {
   if(is.null(curl))
     curl <- getCurlHandle()
   
@@ -226,21 +226,27 @@ oauthPOST <- function(url, consumerKey, consumerSecret,
                       httpMethod = "POST", signMethod = signMethod,
                       handshakeComplete = handshakeComplete, callback = callback)
 
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader, handshakeComplete)
   
   ## post ,specify the method
   ## We should be able to use postForm() but we have to work out the issues
   ## with escaping, etc. to match the signature mechanism.
   if (length(params) == 0) {
     reader <- dynCurlReader(curl, baseURL = url, verbose = FALSE, binary = binary)
-    fields <- paste(names(auth), sapply(auth, curlPercentEncode),
-                    sep = "=", collapse = "&")
+    if(includeOAuthInfoInBody)
+       fields <- paste(names(auth), sapply(auth, curlPercentEncode),
+                        sep = "=", collapse = "&")
+    else
+       fields = ""
+    
     curlPerform(curl = curl, URL = url, postfields = fields,
                 writefunction = reader$update, .opts = .opts)
     reader$value()
-  } else
-      postForm(url, .params = c(params, lapply(auth, I)), curl = curl,
-                .opts = .opts, style = "POST")
+  } else {
+      if(includeOAuthInfoInBody)
+         params = c(params, lapply(auth, I))
+      postForm(url, .params = params, curl = curl, .opts = .opts, style = "POST")
+  }
 }
 
 #XXX? use .opts for the curl options.
@@ -262,7 +268,7 @@ oauthGET <- function(url, consumerKey, consumerSecret,
 
   .opts$httpget = TRUE
 
-  .opts = addAuthorizationHeader(.opts, auth, oauthSecret)
+  .opts = addAuthorizationHeader(.opts, auth, oauthSecret, customHeader, handshakeComplete)
 
   
   getForm(url, .params = params, curl = curl, .opts = .opts, binary = binary)
@@ -270,17 +276,22 @@ oauthGET <- function(url, consumerKey, consumerSecret,
 
 addAuthorizationHeader =
     # Add the Authorization header field.  
-function(.opts, auth, secret, customHeader = character())
+function(.opts, auth, secret, customHeader = character(), quoteOAuthValues = FALSE)
 {
  if(length(secret) == 0)  #  !("oauth_secret" %in% names(auth)) || auth[["oauth_secret"]] == "")
     return(.opts)
 
  if(length(customHeader))
    auth[names(customHeader)] = customHeader
- 
-  tmp = paste(names(auth), auth, sep = "=", collapse = ", ")
 
-  val = sprintf('OAuth realm="", %s', tmp) # was sprintf('OAuth realm="", %s', tmp))
+  if(quoteOAuthValues)  {
+     auth = auth[order(names(auth))]
+     tmp = paste(names(auth), sprintf('"%s"', auth), sep = "=", collapse = ", ")
+  } else
+     tmp = paste(names(auth), auth, sep = "=", collapse = ", ")
+
+
+  val = sprintf('OAuth %s', tmp) # was sprintf('OAuth realm="", %s', tmp))
   if("httpheader" %in% names(.opts))
      .opts$httpheader[["Authorization"]] = val
   else
