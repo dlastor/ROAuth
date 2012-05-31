@@ -109,7 +109,7 @@ function(cred,
   cred@oauthKey = vals['oauth_token']
   cred@oauthSecret = vals['oauth_token_secret']  
 
-  cred
+  invisible(cred)
 }
 
 
@@ -280,10 +280,11 @@ function(.opts, auth, secret, customHeader = character())
  
   tmp = paste(names(auth), auth, sep = "=", collapse = ", ")
 
+  val = sprintf('OAuth realm="", %s', tmp) # was sprintf('OAuth realm="", %s', tmp))
   if("httpheader" %in% names(.opts))
-     .opts$httpheader[["Authorization"]] = sprintf('OAuth realm="", %s', tmp)
+     .opts$httpheader[["Authorization"]] = val
   else
-     .opts$httpheader = c("Authorization" = sprintf('OAuth realm="", %s', tmp))
+     .opts$httpheader = c("Authorization" = val)
 
   .opts
 }
