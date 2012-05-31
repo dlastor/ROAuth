@@ -41,7 +41,7 @@ setRefClass("OAuth",
                 oauthSecret <<- obj@oauthSecret
                 
                 handshakeComplete <<- TRUE
-                .self
+                invisible(.self)
               },
               
               isVerified = function() {
@@ -55,7 +55,7 @@ setRefClass("OAuth",
               },
               
               OAuthRequest = function(URL, params = character(), method = "GET",
-                                      customHeader = .self$customHeader, curl = getCurlHandle(), ...) #, .opts = list())
+                                      customHeader = .self$customHeader, curl = getCurlHandle(), ..., binary = NA) #, .opts = list())
                {
                 ' If the OAuth handshake has been completed, will
                 submit a URL request with an OAuth signature, returning
@@ -75,7 +75,7 @@ setRefClass("OAuth",
                          consumerSecret = .self$consumerSecret,
                          oauthKey = .self$oauthKey, oauthSecret = .self$oauthSecret,
                          customHeader = customHeader, curl = curl, 
-                         signMethod = .self$signMethod, ...)#, .opts = .opts)
+                         signMethod = .self$signMethod, ..., binary = binary)#, .opts = .opts)
               }
               )
             )
